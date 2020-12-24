@@ -1,13 +1,13 @@
 @echo off
 
 set DB_INSTANCE_NAME=MSSQLLocalDb
-set DB_DATA_DIR=C:\data
+set DB_DATA_DIR=C:\data\%DB_INSTANCE_NAME%
 set DB_NAME=AzureStorageEmulatorDb510
 
 REM In win server 2019 sqlcmd has permission issue creating files without change permission
 echo [entrypoint] Change C:\data permission.
-icacls "C:\data" /grant Everyone:M
 if not exist "%DB_DATA_DIR%" mkdir %DB_DATA_DIR%
+icacls "%DB_DATA_DIR%" /grant Everyone:M
 
 echo [entrypoint] Create and start DB instance %DB_INSTANCE_NAME%.
 SqlLocalDB.exe create %DB_INSTANCE_NAME% -s
@@ -17,7 +17,8 @@ if exist %DB_DATA_DIR%/%DB_NAME%.mdf (
   echo [entrypoint] Previous DB file found. Restoring DB.
   sqlcmd.exe -S "(localdb)\%DB_INSTANCE_NAME%" -i "C:\restore.sql"
 ) else (
-  echo [entrypoint] Previous DB file not found. Creating New DB.  
+  echo [entrypoint] Previous DB file not found. Creating DB %DB_NAME% on %DB_INSTANCE_NAME%.
+  echo [entrypoint] Though AzureStorageEmulator will log creating DB on its behalf, it will reuse this one. 
   sqlcmd.exe -S "(localdb)\%DB_INSTANCE_NAME%" -i "C:\init.sql"
 )
 
