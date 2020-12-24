@@ -8,6 +8,8 @@ set DB_DATA_DIR=C:\data\%DB_INSTANCE_NAME%
 set DB_NAME=AzureStorageEmulatorDb510
 
 if not exist "%DB_DATA_DIR%" mkdir %DB_DATA_DIR%
+REM In win server 2019 sqlcmd has permission issue creating files without change permission
+icacls "%DB_DATA_DIR%" /grant Everyone:M
 
 REM If persistent DB data exists restore it, else create a new DB
 if exist %DB_DATA_DIR%/%DB_NAME%.mdf (

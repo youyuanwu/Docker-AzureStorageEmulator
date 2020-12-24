@@ -19,8 +19,7 @@ RUN msiexec /i MicrosoftAzureStorageEmulator.msi /qn
 RUN powershell -NoProfile -Command \
         Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-# RUN choco feature disable -n=allowGlobalConfirmation
-# install sql cmd
+# install sqlcmd
 RUN choco install sqlserver-cmdlineutils -y
 
 RUN powershell -NoProfile -Command \
@@ -40,13 +39,6 @@ RUN powershell -NoProfile -Command \
         "(Get-Content .\AzureStorageEmulator.exe.config) -replace 'http://127.0.0.1:10000/','http://127.0.0.1:20000/' | Out-File -Encoding utf8 .\AzureStorageEmulator.exe.config"; \
         "(Get-Content .\AzureStorageEmulator.exe.config) -replace 'http://127.0.0.1:10001/','http://127.0.0.1:20001/' | Out-File -Encoding utf8 .\AzureStorageEmulator.exe.config"; \
         "(Get-Content .\AzureStorageEmulator.exe.config) -replace 'http://127.0.0.1:10002/','http://127.0.0.1:20002/' | Out-File -Encoding utf8 .\AzureStorageEmulator.exe.config";
-
-# add config to change data storage location
-ADD AzureStorageEmulator.5.10.config 'C:\Users\ContainerAdministrator\AppData\Local\AzureStorageEmulator\AzureStorageEmulator.5.10.config'
-
-ADD entrypoint.cmd 'C:\entrypoint.cmd'
-ADD init.sql 'C:\init.sql'
-ADD restore.sql 'C:\restore.sql'
 
 WORKDIR "C:\nginx"
 
@@ -68,7 +60,14 @@ ADD nginx.conf 'conf\nginx.conf'
 
 EXPOSE 10000 10001 10002
 
+WORKDIR /
+# add config and scripts to change all data storage location to C:\data
+ADD AzureStorageEmulator.5.10.config 'C:\Users\ContainerAdministrator\AppData\Local\AzureStorageEmulator\AzureStorageEmulator.5.10.config'
+ADD entrypoint.cmd 'C:\entrypoint.cmd'
+ADD init.sql 'C:\init.sql'
+ADD restore.sql 'C:\restore.sql'
+VOLUME [ "C:/data" ]
+
+WORKDIR "C:\nginx"
 ENTRYPOINT C:\entrypoint.cmd
 CMD nginx.exe
-
-
