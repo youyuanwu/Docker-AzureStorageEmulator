@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/windows/servercore:ltsc2016
+ARG BaseImageTag=ltsc2016
+FROM mcr.microsoft.com/windows/servercore:${BaseImageTag}
 MAINTAINER Boshi Lian <farmer1992@gmail.com>
 
 ENV LOCAL_DB_URL https://download.microsoft.com/download/9/0/7/907AD35F-9F9C-43A5-9789-52470555DB90/ENU/SqlLocalDB.msi
@@ -10,9 +11,17 @@ RUN msiexec /i SqlLocalDB.msi /qn /norestart IACCEPTSQLLOCALDBLICENSETERMS=YES
 ENV AZ_STOR_EMU_URL https://download.visualstudio.microsoft.com/download/pr/87453e3b-79ac-4d29-a70e-2a37d39f2b12/f0e339a0a189a0d315f75a72f0c9bd5e/microsoftazurestorageemulator.msi
 
 RUN powershell -NoProfile -Command \
-        Invoke-WebRequest %AZ_STOR_EMU_URL% -OutFile MicrosoftAzureStorageEmulator.msi;
+        Invoke-WebRequest %AZ_STOR_EMU_URL% -TimeoutSec 600 -OutFile MicrosoftAzureStorageEmulator.msi;
 
 RUN msiexec /i MicrosoftAzureStorageEmulator.msi /qn
+
+# install choco
+RUN powershell -NoProfile -Command \
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# RUN choco feature disable -n=allowGlobalConfirmation
+# install sql cmd
+RUN choco install sqlserver-cmdlineutils -y
 
 RUN powershell -NoProfile -Command \
         Remove-Item -Force *.msi;
@@ -32,9 +41,13 @@ RUN powershell -NoProfile -Command \
         "(Get-Content .\AzureStorageEmulator.exe.config) -replace 'http://127.0.0.1:10001/','http://127.0.0.1:20001/' | Out-File -Encoding utf8 .\AzureStorageEmulator.exe.config"; \
         "(Get-Content .\AzureStorageEmulator.exe.config) -replace 'http://127.0.0.1:10002/','http://127.0.0.1:20002/' | Out-File -Encoding utf8 .\AzureStorageEmulator.exe.config";
 
-ADD entrypoint.cmd 'C:\entrypoint.cmd'
+# add config to change data storage location
+ADD AzureStorageEmulator.5.10.config 'C:\Users\ContainerAdministrator\AppData\Local\AzureStorageEmulator\AzureStorageEmulator.5.10.config'
 
-RUN AzureStorageEmulator.exe init
+ADD entrypoint.cmd 'C:\entrypoint.cmd'
+ADD createDB.sql 'C:\createDB.sql'
+ADD restoreDB.sql 'C:\restoreDB.sql'
+# RUN AzureStorageEmulator.exe init
 
 WORKDIR "C:\nginx"
 
