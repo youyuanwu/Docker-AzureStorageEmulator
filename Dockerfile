@@ -45,9 +45,8 @@ RUN powershell -NoProfile -Command \
 ADD AzureStorageEmulator.5.10.config 'C:\Users\ContainerAdministrator\AppData\Local\AzureStorageEmulator\AzureStorageEmulator.5.10.config'
 
 ADD entrypoint.cmd 'C:\entrypoint.cmd'
-ADD createDB.sql 'C:\createDB.sql'
-ADD restoreDB.sql 'C:\restoreDB.sql'
-# RUN AzureStorageEmulator.exe init
+ADD init.sql 'C:\init.sql'
+ADD restore.sql 'C:\restore.sql'
 
 WORKDIR "C:\nginx"
 
