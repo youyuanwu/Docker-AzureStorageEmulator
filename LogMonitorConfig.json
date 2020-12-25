@@ -1,0 +1,11 @@
+{
+  "LogConfig": {
+    "sources": [
+      {
+        "type": "File",
+        "directory": "C:\\Users\\ContainerAdministrator\\AppData\\Local\\AzureStorageEmulator\\Logs",
+        "includeSubdirectories": true
+      }
+    ]
+  }
+}

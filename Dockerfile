@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/windows/servercore:ltsc2016
+ARG BaseImageTag=ltsc2016
+FROM mcr.microsoft.com/windows/servercore:${BaseImageTag}
 MAINTAINER Boshi Lian <farmer1992@gmail.com>
 
 ENV LOCAL_DB_URL https://download.microsoft.com/download/9/0/7/907AD35F-9F9C-43A5-9789-52470555DB90/ENU/SqlLocalDB.msi
@@ -36,6 +37,14 @@ ADD entrypoint.cmd 'C:\entrypoint.cmd'
 
 RUN AzureStorageEmulator.exe init
 
+# log monitor to redirect iss and app log to stdout
+WORKDIR /LogMonitor
+ENV LOG_MONITOR_URL https://github.com/microsoft/windows-container-tools/releases/download/v1.1/LogMonitor.exe
+RUN powershell -NoProfile -Command \
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+        Invoke-WebRequest $Env:LOG_MONITOR_URL -OutFile LogMonitor.exe
+COPY ./LogMonitorConfig.json LogMonitorConfig.json
+
 WORKDIR "C:\nginx"
 
 ENV NGX_URL https://nginx.org/download/nginx-1.12.0.zip
@@ -57,6 +66,7 @@ ADD nginx.conf 'conf\nginx.conf'
 EXPOSE 10000 10001 10002
 
 ENTRYPOINT C:\entrypoint.cmd
-CMD nginx.exe
+# wrap exe in log monitor
+CMD  C:\LogMonitor\LogMonitor.exe nginx.exe
 
 
